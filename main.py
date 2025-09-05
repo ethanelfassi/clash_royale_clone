@@ -2,7 +2,7 @@ import pygame
 from settings import WIN_RES
 from cr import Map, Troupe, Tour, Game
 from troupes import TROUPES
-from player import Player
+from player import Player, Carte
 
 pygame.init()
 
@@ -16,15 +16,24 @@ sprites_troupe = {"avant":"assets/1.png",
                   "arriere":"assets/4.png",
                   "attaque":"assets/5.png"}
 
+sprites_tour = {"avant":"assets/tower.png",
+                  "droite":"assets/tower.png",
+                  "gauche":"assets/tower.png",
+                  "arriere":"assets/tower.png",
+                  "attaque":"assets/tower.png"}
+
+
 
 m = Map("assets/arene.png", screen)
 
 knight = Troupe(*TROUPES["knight"], (400, 300), m, 1,sprites_troupe)
 archer = Troupe(*TROUPES["archer"], (200, 580), m, 2,sprites_troupe)
-tour1 = Tour(50, .5, 100, 30, (100, 220), m, 3, {"avant":"assets/tower.png"})
+tour1 = Tour(1000, 10, 200, 200, (100, 220), m, 3, sprites_tour)
 
 game = Game([knight, archer, tour1], m)
-player = Player([], 1, game)
+
+carte = Carte((100, 620), (70, 80), None)
+player = Player([carte], 1, game)
 
 running = True
 while running:

@@ -1,9 +1,25 @@
 from cr import Troupe, Map, Game
 from troupes import TROUPES
+from settings import WIN_RES
+from consts import SCALE_CARTE
+from clickable import Clickable
 import pygame
 
+class Carte(Clickable):
+    def __init__(self, coords, dim, sprite):
+        super().__init__(coords, dim)
+        self.sprite = sprite
+        self.sprite = pygame.transform.scale(pygame.image.load("assets/carte.png"), (SCALE_CARTE[0]*WIN_RES, SCALE_CARTE[1]*WIN_RES))
+    
+    def display(self, screen):
+        x, y = self.coords
+        screen.blit(self.sprite, (x, y))
+
+    def update(self,screen):
+        self.display(screen)
+
 class Player:
-    def __init__(self, deck:list[str], team:int, game:Game):
+    def __init__(self, deck:list[Carte], team:int, game:Game):
         self.deck = deck
         self.team = team
         self.game = game
@@ -19,11 +35,14 @@ class Player:
             self.energie -= troupe.cost
     
     def display(self, screen):
-        # afficher bar energie + deck (cartes)
+        # afficher bar energie
         font = pygame.font.Font(None, 50)  # None = police par défaut
         text = font.render(str(int(self.energie)), True, (255, 255, 255))
         screen.blit(text, (50, 80))
 
     def update(self, screen):
         self.energie = min(self.energie+self.step_energie, self.max_energie)
+        for carte in self.deck:
+            carte.update(screen)
+
         self.display(screen)

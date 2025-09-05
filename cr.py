@@ -2,11 +2,12 @@ from settings import WIN_RES
 import math
 from abc import ABC, abstractmethod
 import pygame
+from consts import SCALE_TROUPE, SCALE_TOUR, SCALE_MAP
 
 class Map:
     def __init__(self, sprite, screen):
         self.sprite = pygame.transform.scale(pygame.image.load(sprite),
-                                                (720*WIN_RES, 1280*WIN_RES))
+                                                (SCALE_MAP[0]*WIN_RES, SCALE_MAP[1]*WIN_RES))
         self.screen = screen
         self.map = [
             [1] + [0]*13 + [1]*3 + [0]*13 + [1],
@@ -51,7 +52,7 @@ class Map:
     """ # DEBUG
 
 class Entite(ABC):
-    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int], map:Map, team:int, sprites:dict[str,str]):
+    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int], map:Map, team:int, sprites:dict[str,str], scale):
         self.max_pv = pv
         self.pv = pv
         self.pf = pf
@@ -61,17 +62,13 @@ class Entite(ABC):
         self.x, self.y = coords
         self.map = map
         self.team = team
-        self.sprites = {cle: pygame.transform.scale(pygame.image.load(valeur), (30*WIN_RES, 30*WIN_RES)) for cle, valeur in sprites.items()}
+        self.scale = scale
+        self._init_sprites(sprites)
         self.state = "avant"
         self.step = 1
     
-    @abstractmethod
-    def get_position(self):
-        pass
-    
-    @abstractmethod
-    def display(self,screen):
-        pass
+    def _init_sprites(self, sprites):
+        self.sprites = {cle: pygame.transform.scale(pygame.image.load(valeur), (self.scale[0]*WIN_RES, self.scale[1]*WIN_RES)) for cle, valeur in sprites.items()}
 
     @abstractmethod
     def update(self, screen, game):
@@ -104,21 +101,26 @@ class Entite(ABC):
                 if dist < closest_dist:
                     closest_tower = entite        
         return closest_tower
-
-class Troupe(Entite):
-    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int],  map:Map, team:int, sprites:dict[str,str]):
-        super().__init__(pv, pf, radius_view, radius_attack, cost, coords, map, team, sprites)
+    
+    def attack(self, target):
+        self.state = "attaque"
+        target.pv -= self.pf
     
     def _display_health(self, screen):
         rel_health = self.pv / self.max_pv 
         pygame.draw.rect(screen, (0, 0, 0), (self.x-18*WIN_RES, self.y-30*WIN_RES, 36*WIN_RES, 8*WIN_RES))
         pygame.draw.rect(screen, (255, 0, 0), (self.x-17*WIN_RES, self.y-26*WIN_RES, 34*WIN_RES* rel_health, 6*WIN_RES))
-        
+
     def display(self, screen):
-        screen.blit(self.sprites[self.state], (self.x - 15*WIN_RES, self.y - 15*WIN_RES))
+        scale_x, scale_y = self.scale
+        screen.blit(self.sprites[self.state], (self.x - (scale_x//2)*WIN_RES, self.y - (scale_y//2)*WIN_RES))
         pygame.draw.circle(screen, (0, 255, 0), (self.x, self.y), self.radius_view, 1)
         pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), self.radius_attack, 1)
         self._display_health(screen)
+
+class Troupe(Entite):
+    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int],  map:Map, team:int, sprites:dict[str,str]):
+        super().__init__(pv, pf, radius_view, radius_attack, cost, coords, map, team, sprites, SCALE_TROUPE)
     
     def get_path(self, target:Entite):
         grille = self.map.map
@@ -134,7 +136,6 @@ class Troupe(Entite):
             file.pop(0)
 
             if (x,y) == end:
-                # self.map.display_path(path)
                 return path
             
             for dx, dy in directions:
@@ -175,9 +176,7 @@ class Troupe(Entite):
         x2, y2 = target.x, target.y
         path = self.get_path(target)
         if Troupe._get_distance(self.x, self.y, x2, y2) > self.radius_attack:
-            # print(f"pos:{self.get_position()}, point:{path[1]}")
             self._go_to_point(path[1])
-
         else:
             self.attack(target)
 
@@ -189,10 +188,6 @@ class Troupe(Entite):
 
         self.move(dx, dy)
 
-    def attack(self, target:Entite):
-        self.state = "attaque"
-        target.pv -= self.pf
-
     def update(self, screen, game):
         target = self.find_closest_ennemy(game)
         if target:
@@ -202,23 +197,13 @@ class Troupe(Entite):
 
 class Tour(Entite):
     def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, coords:tuple[str, int],  map:Map, team:int, sprites:list[str]):
-        super().__init__(pv, pf, radius_view, radius_attack, 0, coords, map, team, sprites)
-        self.sprites = {cle: pygame.transform.scale(pygame.image.load(valeur), (112*WIN_RES, 150*WIN_RES)) for cle, valeur in sprites.items()}
-
-    def _display_health(self, screen):
-        rel_health = self.pv / self.max_pv 
-        pygame.draw.rect(screen, (0, 0, 0), (self.x-18*WIN_RES, self.y-30*WIN_RES, 36*WIN_RES, 8*WIN_RES))
-        pygame.draw.rect(screen, (255, 0, 0), (self.x-17*WIN_RES, self.y-26*WIN_RES, 34*WIN_RES* rel_health, 6*WIN_RES))
-        
-    def display(self, screen):
-        screen.blit(self.sprites[self.state], (self.x - 56*WIN_RES, self.y - 75*WIN_RES))
-        pygame.draw.circle(screen, (0, 255, 0), (self.x, self.y), self.radius_view, 1)
-        pygame.draw.circle(screen, (255, 0, 0), (self.x, self.y), self.radius_attack, 1)
-        self._display_health(screen)
+        super().__init__(pv, pf, radius_view, radius_attack, 0, coords, map, team, sprites, SCALE_TOUR)
 
     def update(self, screen, game):
         self.display(screen)
-
+        target = self.find_closest_ennemy(game)
+        if target:
+            self.attack(target)   
 
 class Game:
     def __init__(self, entites:list[Entite], map:Map):
