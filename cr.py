@@ -26,6 +26,20 @@ class Map:
         self.taillev = 16.8
         self.offh = 50
         self.offv = 133
+        
+    def check_pos_in_map(self, click_pos):
+        x, y = click_pos
+        min_x, max_x = 0, len(self.map)
+        min_y, max_y = 0, len(self.map[0])
+
+        indice_x = round((x - self.offh) / self.tailleh)
+        indice_y = round((y - self.offv) / self.taillev)
+        if (min_x <= indice_x <= max_x) and (min_y <= indice_y <= max_y):
+            try:
+                return self.map[indice_x][indice_y] == 0
+            except: 
+                return False
+        return False
             
     # taille 18x31
     def display(self):

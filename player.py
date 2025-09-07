@@ -6,16 +6,20 @@ from clickable import Clickable
 import pygame
 
 class Carte(Clickable):
-    def __init__(self, coords, dim, sprite):
+    def __init__(self, coords, dim, sprite, troupe:str):
         super().__init__(coords, dim)
         self.sprite = sprite
+        self.troupe = troupe
+        self.selected = False
         self.sprite = pygame.transform.scale(pygame.image.load("assets/carte.png"), (SCALE_CARTE[0]*WIN_RES, SCALE_CARTE[1]*WIN_RES))
     
     def display(self, screen):
         x, y = self.coords
+        if self.selected:
+            y -= 10 
         screen.blit(self.sprite, (x, y))
 
-    def update(self,screen):
+    def update(self,screen):       
         self.display(screen)
 
 class Player:
@@ -23,6 +27,7 @@ class Player:
         self.deck = deck
         self.team = team
         self.game = game
+        self.selection = None #selection:Carte
         self.energie = 0
         self.max_energie = 10
         self.step_energie = 0.05

@@ -3,6 +3,7 @@ from settings import WIN_RES
 from cr import Map, Troupe, Tour, Game
 from troupes import TROUPES
 from player import Player, Carte
+from consts import COORDS_CARTE, DIM_CARTE
 
 pygame.init()
 
@@ -28,12 +29,12 @@ m = Map("assets/arene.png", screen)
 
 knight = Troupe(*TROUPES["knight"], (400, 300), m, 1,sprites_troupe)
 archer = Troupe(*TROUPES["archer"], (200, 580), m, 2,sprites_troupe)
-tour1 = Tour(1000, 10, 200, 200, (100, 220), m, 3, sprites_tour)
+tour1 = Tour(1000, 1, 200, 200, (100, 220), m, 3, sprites_tour)
 
 game = Game([knight, archer, tour1], m)
 
-carte = Carte((100, 620), (70, 80), None)
-player = Player([carte], 1, game)
+deck = [Carte((x, y), DIM_CARTE, None, "archer") for x, y in COORDS_CARTE] 
+player = Player(deck, 1, game)
 
 running = True
 while running:
@@ -42,7 +43,15 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             click_coords = pygame.mouse.get_pos()
-            player.place_troupe(click_coords, "knight", sprites_troupe)
+            for carte in player.deck:
+                carte.selected = False
+                if carte.been_clicked(click_coords):
+                    carte.selected = True
+                    player.selection = carte.troupe
+                    break
+            
+            if player.selection and m.check_pos_in_map(click_coords):
+                player.place_troupe(click_coords, player.selection, sprites_troupe)
            
     game.update()
     player.update(screen)
@@ -53,8 +62,7 @@ pygame.quit()
 
 
 """
-todo:
-- selection des cartes 
+todo: 
 - gerer collisions, (chaque perso est un cercle tu repousses selon la normale)
 - try except partt ou ca peut chier
 
@@ -62,4 +70,5 @@ amelioration:
 - faire de l'heritage bien -> classe generique qui a (pv, pf, team, spirtes etc....)
 - sprite diagonales, animations
 - cooldown d'attaque
+- selection des cartes
 """
