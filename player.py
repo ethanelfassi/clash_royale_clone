@@ -1,12 +1,15 @@
 from cr import Troupe, Map, Game
 from troupes import TROUPES
-from settings import WIN_RES
+from settings import WIN_RES, FPS
 from consts import SCALE_CARTE
 from clickable import Clickable
 import pygame
 
 class Carte(Clickable):
-    def __init__(self, coords, dim, sprite, troupe:str):
+    """
+    Carte du deck
+    """
+    def __init__(self, coords: tuple[int], dim: tuple[int], sprite:str, troupe:str):
         super().__init__(coords, dim)
         self.sprite = sprite
         self.troupe = troupe
@@ -16,7 +19,7 @@ class Carte(Clickable):
     def display(self, screen):
         x, y = self.coords
         if self.selected:
-            y -= 10 
+            y -= 15 * WIN_RES 
         screen.blit(self.sprite, (x, y))
 
     def update(self,screen):       
@@ -30,7 +33,7 @@ class Player:
         self.selection = None #selection:Carte
         self.energie = 0
         self.max_energie = 10
-        self.step_energie = 0.05
+        self.step_energie = 1 / FPS
 
     def place_troupe(self, coords:tuple[int, int], nom_troupe:str, sprites):
         m = self.game.map
@@ -41,7 +44,7 @@ class Player:
     
     def display(self, screen):
         # afficher bar energie
-        font = pygame.font.Font(None, 50)  # None = police par défaut
+        font = pygame.font.Font(None, 50*WIN_RES)  # None = police par défaut
         text = font.render(str(int(self.energie)), True, (255, 255, 255))
         screen.blit(text, (50, 80))
 

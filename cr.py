@@ -5,7 +5,10 @@ import pygame
 from consts import SCALE_TROUPE, SCALE_TOUR, SCALE_MAP
 
 class Map:
-    def __init__(self, sprite, screen):
+    """
+    Representation de la map
+    """
+    def __init__(self, sprite:str, screen:pygame.surface.Surface):
         self.sprite = pygame.transform.scale(pygame.image.load(sprite),
                                                 (SCALE_MAP[0]*WIN_RES, SCALE_MAP[1]*WIN_RES))
         self.screen = screen
@@ -27,7 +30,10 @@ class Map:
         self.offh = 50
         self.offv = 133
         
-    def check_pos_in_map(self, click_pos):
+    def check_pos_in_map(self, click_pos:tuple[int]) -> bool:
+        """
+        permet de vérifier qu'un click soit sur une case valide de la map
+        """
         x, y = click_pos
         min_x, max_x = 0, len(self.map)
         min_y, max_y = 0, len(self.map[0])
@@ -42,7 +48,10 @@ class Map:
         return False
             
     # taille 18x31
-    def display(self):
+    def display(self) -> None:
+        """
+        Affiche la map à l'écran
+        """
         self.screen.blit(self.sprite, (0, 0))
         """
         for ligne in range(len(self.map)):
@@ -66,7 +75,10 @@ class Map:
     """ # DEBUG
 
 class Entite(ABC):
-    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int], map:Map, team:int, sprites:dict[str,str], scale):
+    """
+    Classe abstraite d'une entité (Troupe ou tour)
+    """
+    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[int], map:Map, team:int, sprites:dict[str,str], scale:list[int]):
         self.max_pv = pv
         self.pv = pv
         self.pf = pf
@@ -81,19 +93,30 @@ class Entite(ABC):
         self.state = "avant"
         self.step = 1
     
-    def _init_sprites(self, sprites):
+    def _init_sprites(self, sprites: dict[str, str]) -> None:
+        """
+        initialise les sprites de l'entite
+        """
         self.sprites = {cle: pygame.transform.scale(pygame.image.load(valeur), (self.scale[0]*WIN_RES, self.scale[1]*WIN_RES)) for cle, valeur in sprites.items()}
 
     @abstractmethod
-    def update(self, screen, game):
+    def update(self, screen:pygame.surface.Surface, game):
         pass
 
-    def get_position(self):
+    def get_position(self) -> tuple[int]:
         posx = (self.x - self.map.offh)//self.map.tailleh
         posy = (self.y - self.map.offv)//self.map.taillev
         return int(posx), int(posy)
-
+    
+    @staticmethod
+    def _get_distance(x1:float, y1:float, x2:float, y2:float) -> float:
+        return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
+    
     def find_closest_ennemy(self, game):
+        """
+        Permet de trouver l'ennemi le plus proche dans le champ de vision de l'entite.
+        Si il y en a aucun, l'ennemi sera la tour la plus proche
+        """
         closest_troup = None
         closest_tower = None
         closest_dist = self.radius_view 
@@ -101,7 +124,7 @@ class Entite(ABC):
         for entite in game.entites:
             if entite is not self and entite.team != self.team:
                 x2, y2 = entite.x, entite.y
-                dist = Troupe._get_distance(self.x, self.y, x2, y2)
+                dist = Entite._get_distance(self.x, self.y, x2, y2)
                 if dist <= closest_dist:
                     closest_troup = entite
         if closest_troup:
@@ -111,7 +134,7 @@ class Entite(ABC):
         for entite in game.entites:
             if isinstance(entite, Tour) and entite.team != self.team:
                 x2, y2 = entite.x, entite.y
-                dist = Troupe._get_distance(self.x, self.y, x2, y2)
+                dist = Entite._get_distance(self.x, self.y, x2, y2)
                 if dist < closest_dist:
                     closest_tower = entite        
         return closest_tower
@@ -133,10 +156,13 @@ class Entite(ABC):
         self._display_health(screen)
 
 class Troupe(Entite):
-    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, coords:tuple[str, int],  map:Map, team:int, sprites:dict[str,str]):
+    def __init__(self, pv:float, pf:float, radius_view:float, radius_attack:float, cost:int, sprites:dict[str,str], coords:tuple[int],  map:Map, team:int):
         super().__init__(pv, pf, radius_view, radius_attack, cost, coords, map, team, sprites, SCALE_TROUPE)
     
-    def get_path(self, target:Entite):
+    def get_path(self, target:Entite) -> list[tuple[int]]:
+        """
+        trouve le chemin entre la troupe et la target (tour ou troupe)
+        """
         grille = self.map.map
         start = self.get_position()
         end = target.get_position()
@@ -165,10 +191,6 @@ class Troupe(Entite):
         self.x += dx
         self.y += dy
 
-    @staticmethod
-    def _get_distance(x1, y1, x2, y2):
-        return ((x1 - x2)**2 + (y1 - y2)**2)**0.5
-
     def change_state(self, angle: float) -> str:
         angle = (angle + math.pi) % (2*math.pi) - math.pi  
         
@@ -189,7 +211,7 @@ class Troupe(Entite):
     def _go_to_target(self, target:Entite):
         x2, y2 = target.x, target.y
         path = self.get_path(target)
-        if Troupe._get_distance(self.x, self.y, x2, y2) > self.radius_attack:
+        if Entite._get_distance(self.x, self.y, x2, y2) > self.radius_attack:
             self._go_to_point(path[1])
         else:
             self.attack(target)
