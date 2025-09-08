@@ -9,7 +9,6 @@ pygame.init()
 
 screen = pygame.display.set_mode((WIN_RES*720, WIN_RES*1280))
 clock = pygame.time.Clock()
-print(type(screen))
 
 sprites_troupe = {"avant":"assets/1.png",
                   "droite":"assets/2.png",

@@ -250,6 +250,15 @@ class Game:
     def add_entites(self, entite:Entite):
         self.entites.append(entite)
 
+    def get_state(self):
+        game_state = ()
+        for entite in self.entites:
+            sprite = [entite.sprites[entite.state]]
+            scale_x, scale_y = entite.scale
+            x = entite.x - (scale_x//2)*WIN_RES
+            y = self.y - (scale_y//2)*WIN_RES
+            game_state.append(sprite, (x, y))
+
     def display(self):
         self.map.display()
 

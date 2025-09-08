@@ -44,7 +44,7 @@ class Player:
     
     def display(self, screen):
         # afficher bar energie
-        font = pygame.font.Font(None, 50*WIN_RES)  # None = police par défaut
+        font = pygame.font.Font(None, int(50*WIN_RES))  # None = police par défaut
         text = font.render(str(int(self.energie)), True, (255, 255, 255))
         screen.blit(text, (50, 80))
 
